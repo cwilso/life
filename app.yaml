@@ -1,0 +1,23 @@
+application: life
+version: 1
+runtime: python
+api_version: 1
+threadsafe: yes
+
+handlers:
+- url: /
+  secure: always
+  static_files: index.html
+  upload: index.html
+
+- url: /img
+  secure: always
+  static_dir: img
+
+- url: /style
+  secure: always
+  static_dir: style
+
+- url: /js
+  secure: always
+  static_dir: js

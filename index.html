@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+<title>Conway's Game of Life</title>
+<link rel="stylesheet" href="style/main.css" type="text/css">
+</head>
+<body>
+	<script src="js/cell.js"></script>
+	<script src="js/dotti.js"></script>
+	<button onclick="tick()">tick</button>
+	<button id="dotti" style="visibility:hidden" onclick="connectBT()">connect Dotti</button>
+	<div id="universe">
+
+	</div>
+	<p>
+		MIDI Input:
+		<select id=midiIn onchange='changeMidiIn();'>
+			<option value="">Not connected</option>
+		</select>
+		MIDI Output:
+		<select id=midiOut onchange='changeMidiOut();'>
+			<option value="">Not connected</option>
+		</select>
+	</p>
+
+<a href="https://github.com/cwilso/conway" style="position: absolute; z-index:2; top: 0; right: 0; border: 0;"><img src="img/forkme.png" alt="Fork me on GitHub"></a>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-35593052-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>
