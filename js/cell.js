@@ -215,7 +215,6 @@ function updateMIDIFromLastFrame() {
 				var elem = findElemByXY(j,i);
 				if (midiOut)
 					midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
-				setDottiPixel(i,j,elem.classList.contains("mature")?255:0,elem.classList.contains("live")?255:0,0);
 			}
 		}	
 	}
