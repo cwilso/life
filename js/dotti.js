@@ -128,8 +128,7 @@ function connectBT() {
         console.log('> Found write characteristic');
         writeCharacteristic = characteristic;
 //        progress.hidden = true;
-        // Clear panel
-        clearDottiPanel();
+        drawFullBoardToDotti();
       })
       .catch(handleError);
     } else {
