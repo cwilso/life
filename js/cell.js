@@ -78,6 +78,7 @@ function changeMIDIOut( ev ) {
 }
 
 function onMIDIFail( err ) {
+    drawFullBoardToMIDI();
 	alert("MIDI initialization failed.");
 }
 
@@ -116,8 +117,8 @@ function onMIDIInit( midi ) {
   if (midiOut && launchpadFound) {  
 	midiOut.send( [0xB0,0x00,0x00] ); // Reset Launchpad
 	midiOut.send( [0xB0,0x00,0x01] ); // Select XY mode
-	drawFullBoardToMIDI();
   }
+  drawFullBoardToMIDI();
 }
 
 
@@ -137,7 +138,9 @@ function flip(elem) {
 	else
 		elem.className = "cell";
 	var key = elem.row*16 + elem.col;
-	midiOut.send( [0x90, key, elem.classList.contains("live") ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
+	if (midiOut)
+		midiOut.send( [0x90, key, elem.classList.contains("live") ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
+	setDottiPixel(elem.row,elem.col,elem.classList.contains("mature")?255:0,elem.classList.contains("live")?255:0,0);
 }
 
 function findElemByXY( x, y ) {
@@ -177,14 +180,12 @@ function countLiveNeighbors(frame,x,y) {
 
 function drawFullBoardToMIDI() {
 //	var t = window.performance.webkitNow();
-
-	if (!launchpadFound)
-		return;
 	for (var i=0; i<numRows; i++) {
 		for (var j=0; j<numCols; j++) {
 			var key = i*16 + j;
-			if (midiOut)
-				midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x13:0x30) : 0x00]);
+			var elem = findElemByXY(j,i);
+			if (midiOut&&launchpadFound)
+				midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
 		}	
 	}
 
@@ -210,9 +211,12 @@ function updateMIDIFromLastFrame() {
 	for (var i=0; i<numRows; i++) {
 		for (var j=0; j<numCols; j++) {
 			var key = i*16 + j;
-			if (currentFrame[i][j] || backFrame[i][j])
+			if (currentFrame[i][j] || backFrame[i][j]) {
+				var elem = findElemByXY(j,i);
 				if (midiOut)
-					midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x13:0x30) : 0x00]);
+					midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
+				setDottiPixel(i,j,elem.classList.contains("mature")?255:0,elem.classList.contains("live")?255:0,0);
+			}
 		}	
 	}
 }
