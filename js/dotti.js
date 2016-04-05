@@ -184,4 +184,41 @@ function drawFullBoardToDotti() {
 	.catch(handleError);
 }
 
+function updateNextPixel() {
+	while (!(currentFrame[currCol][currCol] || backFrame[currCol][currCol])) {
+	  	currCol++;
+	  	if (currCol==numCols) {
+	  		currCol=0;
+	  		currRow++;
+	  	}
+	  	if (currRow==numRows)
+	  		return;  // we're done
+	}
+	var elem = findElemByXY(currCol,currRow);
+	var red = elem.classList.contains("mature")?255:0;
+	var green = elem.classList.contains("live")?255:0;
+    console.log('Drawing pixel:  ('+currRow+','+currCol+') (' + red + ',' + green + ',' + 0+')');
+  	let cmd = new Uint8Array([ 0x07, 0x02, 8*currRow + currCol + 1, red, green, 0]);
+  	currCol++;
+  	if (currCol==numCols) {
+  		currCol=0;
+  		currRow++;
+  	}
+	sendCommand(cmd).then(() => {
+    console.log('Drew pixel.');
+    if (currRow==numRows) {
+    	console.log('Done drawing board.')
+    	currRow=0;
+    } else
+    	updateNextPixel();
+	}).catch(handleError);
+}
+
+
+function updateDottiFromLastFrame() {
+	currRow=0;
+	currCol=0;
+	updateNextPixel();
+}
+
 

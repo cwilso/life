@@ -255,6 +255,7 @@ function tick() {
 	}
 //	drawFullBoardToMIDI();
 	updateMIDIFromLastFrame();
+	updateDottiFromLastFrame();
 }
 
 function midiProc(event) {
