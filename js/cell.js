@@ -305,7 +305,7 @@ function midiProc(event) {
   } else if (cmd == 9) {  // Note on
     if (mkiiFound) {
         noteNumber -= 11;
-    	if ((noteNumber % 10)==9)
+    	if ((noteNumber % 10)==8)
     	    tick();
     	else {
     	    var x= (noteNumber % 10);
