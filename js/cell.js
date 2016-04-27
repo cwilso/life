@@ -192,8 +192,15 @@ function drawFullBoardToMIDI() {
 		for (var j=0; j<numCols; j++) {
 			var key = i*16 + j;
 			var elem = findElemByXY(j,i);
-			if (midiOut&&launchpadFound)
-				midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
+			if (midiOut && launchpadFound) {
+				if (mkiiFound) {
+					var key = 11 + i*10 + j;
+					midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x08:0x10) : 0x00]);
+				} else {
+					var key = i*32 + j*2;
+					midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
+				}
+			}
 		}	
 	}
 
