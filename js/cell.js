@@ -304,10 +304,10 @@ function midiProc(event) {
     //noteOff(b);
   } else if (cmd == 9) {  // Note on
     if (mkiiFound) {
-    	if ((noteNumber % 11)==9)
+        noteNumber -= 11;
+    	if ((noteNumber % 10)==9)
     	    tick();
     	else {
-    	    noteNumber -= 11;
     	    var x= (noteNumber % 10);
     	    var y = 7 - Math.floor(noteNumber/10);
     	    if ((x>=0)&&(x<8)&&(y>=0)&&(y<8))
