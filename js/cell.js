@@ -145,9 +145,17 @@ function flip(elem) {
 		elem.className = "cell live";
 	else
 		elem.className = "cell";
-	var key = elem.row*16 + elem.col;
-	if (midiOut)
+	if (midiOut) {
 		midiOut.send( [0x90, key, elem.classList.contains("live") ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
+		if (mkiiFound) {
+			var key = 11 + (7-i)*10 + j;
+			midiOut.send( [0x90, key, elem.classList.contains("live") ? (elem.classList.contains("mature")?0x08:0x10) : 0x00]);
+		} else {
+			var key = elem.row*16 + elem.col;
+//			var key = i*32 + j*2;
+			midiOut.send( [0x90, key, elem.classList.contains("live") ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
+		}
+	}
 	setDottiPixel(elem.row,elem.col,elem.classList.contains("mature")?255:0,elem.classList.contains("live")?255:0,0);
 }
 
@@ -194,7 +202,7 @@ function drawFullBoardToMIDI() {
 			var elem = findElemByXY(j,i);
 			if (midiOut && launchpadFound) {
 				if (mkiiFound) {
-					var key = 11 + i*10 + j;
+					var key = 11 + (7-i)*10 + j;
 					midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x08:0x10) : 0x00]);
 				} else {
 					var key = i*32 + j*2;
