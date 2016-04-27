@@ -42,7 +42,7 @@ window.addEventListener('load', function() {
 	}
 	currentFrame = frame1;
 	backFrame = frame2;
-	navigator.requestMIDIAccess({}).then( onMIDIInit, onMIDIFail );
+	navigator.requestMIDIAccess({sysex: true}).then( onMIDIInit, onMIDIFail );
 } );
 
 var selectMIDIIn = null;
@@ -69,9 +69,17 @@ function changeMIDIOut( ev ) {
 
   for (var output of midiAccess.outputs.values()) {
     if (selectedID == output.id) {
-      midiOut = output;
-	  midiOut.send( [0xB0,0x00,0x00] ); // Reset Launchpad
-	  midiOut.send( [0xB0,0x00,0x01] ); // Select XY mode
+    	  launchpadFound = (output.name.toString().indexOf("Launchpad") != -1);
+    	  mkiiFound =  (output.name.toString().indexOf("Launchpad MK2") != -1);
+    	  midiOut = output;
+	  if (launchpadFound) {
+	  	if (mkiiFound) {
+	     		midiOut.send( [0xF0, 0x00, 0x20, 0x29, 0x02, 0x18, 022, 0x00, 0xF7] ); // Session layout
+	  	} else {
+	     		midiOut.send( [0xB0,0x00,0x00] ); // Reset Launchpad
+			midiOut.send( [0xB0,0x00,0x01] ); // Select XY mode
+	      }
+	  }
 	  drawFullBoardToMIDI();
 	}
   }
