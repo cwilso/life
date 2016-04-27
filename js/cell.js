@@ -322,4 +322,5 @@ function midiProc(event) {
       	    flipXY( x, y );
         }
     }
+  }
 }
