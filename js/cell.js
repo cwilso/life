@@ -303,15 +303,22 @@ function midiProc(event) {
     // note off
     //noteOff(b);
   } else if (cmd == 9) {  // Note on
+    if (mkiiFound) {
+    	if ((noteNumber % 11)==9)
+    	    tick();
+    	else {
+    	    var x= (noteNumber % 11) - 1;
+    	    var y = Math.floor(noteNumber/11) - 1;
+    	    if ((x>=0)&&(x<8)&&(y>=0)&&(y<8))
+    	        flipXY(x,y);
+    	}
+    }
     if ((noteNumber&0x0f)==8)
       tick();
     else {
       var x = noteNumber & 0x0f;
       var y = (noteNumber & 0xf0) >> 4;
       flipXY( x, y );
-    }
-  } else if (cmd == 11) { // Continuous Controller message
-    switch (noteNumber) {
     }
   }
 }
