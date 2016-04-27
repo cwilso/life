@@ -56,7 +56,7 @@ function setPanelColor(red, green, blue) {
  * Set color of an LED.
  */
 function setLedColor(row, column, red, green, blue) {
-  console.log('Set LED color: ' + red + ', ' + green + ', ' + blue);
+  console.log('Set LED color:  ('+row+','+column+') ' + red + ', ' + green + ', ' + blue);
   let position = (row-1)*8 + column;
   let command = 0x0702;
   let cmd = new Uint8Array([(command >> 8) & 0xff, command & 0xff, position, red, green, blue]);
@@ -67,6 +67,9 @@ function setLedColor(row, column, red, green, blue) {
   .catch(handleError);
 }
 
+function clearDottiPanel() {
+	setPanelColor(10,10,10);
+}
 /**
  * Reset the app variable states.
  */
@@ -87,6 +90,7 @@ function handleError(error) {
 //  dialog.open();
 }
 
+// 1c:1a:c0:73:ad:a4
 
 /**
  * Connect to command characteristic.
@@ -124,13 +128,97 @@ function connectBT() {
         console.log('> Found write characteristic');
         writeCharacteristic = characteristic;
 //        progress.hidden = true;
-        // Clear panel
-        setPanelColor(0, 0, 0);
+        drawFullBoardToDotti();
       })
       .catch(handleError);
     } else {
 //      progress.hidden = true;
-      setPanelColor(0, 0, 0);
+      clearDottiPanel();
     }
   }
 }
+
+function setDottiPixel(row,column,red,green,blue) {
+	if (gattServer && gattServer.connected)
+		setLedColor(row+1,column+1,red,green,blue);
+}
+
+var currRow=0, currCol=0;
+
+function drawNextPixel() {
+	var elem = findElemByXY(currCol,currRow);
+	var red = elem.classList.contains("mature")?255:0;
+	var green = elem.classList.contains("live")?255:0;
+    console.log('Drawing pixel:  ('+currRow+','+currCol+') (' + red + ',' + green + ',' + 0+')');
+  	let cmd = new Uint8Array([ 0x07, 0x02, 8*currRow + currCol + 1, red, green, 0]);
+  	currCol++;
+  	if (currCol==numCols) {
+  		currCol=0;
+  		currRow++;
+  	}
+
+	sendCommand(cmd).then(() => {
+    console.log('Drew pixel.');
+    if (currRow==numRows) {
+    	console.log('Done drawing board.')
+    	currRow=0;
+    } else
+    	drawNextPixel();
+	}).catch(handleError);
+}
+
+
+function drawFullBoardToDotti() {
+	if (!gattServer || !gattServer.connected) 
+		return;
+
+	let command = 0x0601;
+	let cmd = new Uint8Array([(command >> 8) & 0xff, command & 0xff, 10, 10, 10]);
+
+	sendCommand(cmd).then(() => {
+		console.log('Cleared board.');
+		currRow=0;
+		currCol=0;
+		drawNextPixel();
+	})
+	.catch(handleError);
+}
+
+function updateNextPixel() {
+	while (!(currentFrame[currCol][currCol] || backFrame[currCol][currCol])) {
+	  	currCol++;
+	  	if (currCol==numCols) {
+	  		currCol=0;
+	  		currRow++;
+	  	}
+	  	if (currRow==numRows)
+	  		return;  // we're done
+	}
+	var elem = findElemByXY(currCol,currRow);
+	var red = elem.classList.contains("mature")?255:0;
+	var green = elem.classList.contains("live")?255:0;
+    console.log('Drawing pixel:  ('+currRow+','+currCol+') (' + red + ',' + green + ',' + 0+')');
+  	let cmd = new Uint8Array([ 0x07, 0x02, 8*currRow + currCol + 1, red, green, 0]);
+  	currCol++;
+  	if (currCol==numCols) {
+  		currCol=0;
+  		currRow++;
+  	}
+	sendCommand(cmd).then(() => {
+    console.log('Drew pixel.');
+    if (currRow==numRows) {
+    	console.log('Done drawing board.')
+    	currRow=0;
+    } else
+    	updateNextPixel();
+	}).catch(handleError);
+}
+
+
+function updateDottiFromLastFrame() {
+	currRow=0;
+	currCol=0;
+	updateNextPixel();
+}
+
+
