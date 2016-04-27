@@ -146,10 +146,9 @@ function flip(elem) {
 	else
 		elem.className = "cell";
 	if (midiOut) {
-		midiOut.send( [0x90, key, elem.classList.contains("live") ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
 		if (mkiiFound) {
 			var key = 11 + (7-elem.row)*10 + elem.col;
-			midiOut.send( [0x90, key, elem.classList.contains("live") ? (elem.classList.contains("mature")?0x08:0x10) : 0x00]);
+			midiOut.send( [0x90, key, elem.classList.contains("live") ? (elem.classList.contains("mature")?0x09:0x10) : 0x00]);
 		} else {
 			var key = elem.row*16 + elem.col;
 //			var key = i*32 + j*2;
@@ -203,7 +202,7 @@ function drawFullBoardToMIDI() {
 			if (midiOut && launchpadFound) {
 				if (mkiiFound) {
 					var key = 11 + (7-i)*10 + j;
-					midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x08:0x10) : 0x00]);
+					midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x09:0x10) : 0x00]);
 				} else {
 					var key = i*32 + j*2;
 					midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
@@ -223,7 +222,7 @@ function drawFullBoardToQUNEO() {
 			if (midiOut && launchpadFound) {
 				if (mkiiFound) {
 					var key = 11 + i*10 + j;
-					midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x08:0x10) : 0x00]);
+					midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x09:0x10) : 0x00]);
 				} else {
 					var key = i*32 + j*2;
 					midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x13:0x30) : 0x00]);
@@ -243,10 +242,9 @@ function updateMIDIFromLastFrame() {
 			if (currentFrame[i][j] || backFrame[i][j]) {
 				var elem = findElemByXY(j,i);
 				if (midiOut) {
-					midiOut.send( [0x90, key, elem.classList.contains("live") ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
 					if (mkiiFound) {
 						var key = 11 + (7-elem.row)*10 + elem.col;
-						midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x08:0x10) : 0x00]);
+						midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x09:0x10) : 0x00]);
 					} else {
 						var key = elem.row*16 + elem.col;
 						midiOut.send( [0x90, key, currentFrame[i][j] ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
