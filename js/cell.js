@@ -307,8 +307,9 @@ function midiProc(event) {
     	if ((noteNumber % 11)==9)
     	    tick();
     	else {
-    	    var x= (noteNumber % 11) - 1;
-    	    var y = Math.floor(noteNumber/11) - 1;
+    	    noteNumber -= 11;
+    	    var x= (noteNumber % 10);
+    	    var y = 7 - Math.floor(noteNumber/10);
     	    if ((x>=0)&&(x<8)&&(y>=0)&&(y<8))
     	        flipXY(x,y);
     	}
