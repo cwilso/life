@@ -124,17 +124,16 @@ function onMIDIInit( midi ) {
   selectMIDIOut.onchange = changeMIDIOut;
 
   if (midiOut && launchpadFound) {  
-	midiOut.send( [0xB0,0x00,0x00] ); // Reset Launchpad
-	midiOut.send( [0xB0,0x00,0x01] ); // Select XY mode
+	mkiiFound =  (midiOut.name.toString().indexOf("Launchpad MK2") != -1);
+  	if (mkiiFound) {
+		midiOut.send( [0xF0, 0x00, 0x20, 0x29, 0x02, 0x18, 022, 0x00, 0xF7] ); // Session layout
+	} else {
+	  	midiOut.send( [0xB0,0x00,0x00] ); // Reset Launchpad
+		midiOut.send( [0xB0,0x00,0x01] ); // Select XY mode
+	}
   }
   drawFullBoardToMIDI();
 }
-
-
-
-
-
-
 
 function flipHandler(e) {
 	flip( e.target );
@@ -206,9 +205,15 @@ function drawFullBoardToQUNEO() {
 		return;
 	for (var i=0; i<numRows; i++) {
 		for (var j=0; j<numCols; j++) {
-			var key = i*32 + j*2;
-			if (midiOut)
-				midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x13:0x30) : 0x00]);
+			if (midiOut && launchpadFound) {
+				if (mkiiFound) {
+					var key = 11 + i*10 + j;
+					midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x08:0x10) : 0x00]);
+				} else {
+					var key = i*32 + j*2;
+					midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x13:0x30) : 0x00]);
+				}
+			}
 		}	
 	}
 
