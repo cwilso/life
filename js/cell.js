@@ -148,7 +148,7 @@ function flip(elem) {
 	if (midiOut) {
 		midiOut.send( [0x90, key, elem.classList.contains("live") ? (elem.classList.contains("mature")?0x13:0x30) : 0x00]);
 		if (mkiiFound) {
-			var key = 11 + (7-i)*10 + j;
+			var key = 11 + (7-elem.row)*10 + elem.col;
 			midiOut.send( [0x90, key, elem.classList.contains("live") ? (elem.classList.contains("mature")?0x08:0x10) : 0x00]);
 		} else {
 			var key = elem.row*16 + elem.col;
