@@ -51,6 +51,7 @@ var midiAccess = null;
 var midiIn = null;
 var midiOut = null;
 var launchpadFound = false;
+var mkiiFound = false;
 
 function changeMIDIIn( ev ) {
   if (midiIn)
