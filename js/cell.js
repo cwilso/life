@@ -14,8 +14,7 @@ var midiIn = null;
 var midiOut = null;
 var midiDeviceType = null;
 
-window.addEventListener('keydown', function() { tick();
-} );
+window.addEventListener('keydown', function() { tick(); } );
 
 window.addEventListener('load', function() {
 	theUniverse = document.getElementById("universe");
@@ -69,9 +68,17 @@ function changeMIDIOut( ev ) {
 
   for (var output of midiAccess.outputs.values()) {
     if (selectedID == output.id) {
-      midiOut = output;
-	  midiOut.send( [0xB0,0x00,0x00] ); // Reset Launchpad
-	  midiOut.send( [0xB0,0x00,0x01] ); // Select XY mode
+    	  launchpadFound = (output.name.toString().indexOf("Launchpad") != -1);
+    	  mkiiFound =  (output.name.toString().indexOf("Launchpad MK2") != -1);
+    	  midiOut = output;
+	  if (launchpadFound) {
+	  	if (mkiiFound) {
+	     		midiOut.send( [0xF0, 0x00, 0x20, 0x29, 0x02, 0x18, 022, 0x00, 0xF7] ); // Session layout
+	  	} else {
+	     		midiOut.send( [0xB0,0x00,0x00] ); // Reset Launchpad
+			midiOut.send( [0xB0,0x00,0x01] ); // Select XY mode
+	      }
+	  }
 	  drawFullBoardToMIDI();
 	}
   }
@@ -98,15 +105,17 @@ function onMIDIInit( midi ) {
 		if (!midiIn) { // still looking for an input device
 			if (input.name.toString() == "Launchpad") {
 				midiDeviceType = "Launchpad";
-				input.onmidimessage = midiProc;
+				input.onmidimessage = LaunchpadMIDIProc;
 				midiDrawRoutine = drawLaunchpadOriginalPixel;
-			} else 
-			if (input.name.toString() == "Launchpad Pro Standalone Port") {
+			} else if (input.name.toString() == "Launchpad MK2") {
+				midiDeviceType = "Launchpad MK2";
+				input.onmidimessage = LaunchPadProAndMKIIMIDIProc;
+				midiDrawRoutine = drawLaunchpadMKIIPixel;
+			} else if (input.name.toString() == "Launchpad Pro Standalone Port") {
 				midiDeviceType = "Launchpad Pro";
-				input.onmidimessage = LaunchPadProMIDIProc;
+				input.onmidimessage = LaunchPadProAndMKIIMIDIProc;
 				midiDrawRoutine = drawLaunchpadProPixel;
-			}
-			else if (input.name.toString() == "QUNEO") {
+			} else if (input.name.toString() == "QUNEO") {
 				midiDeviceType = "QUNEO";
 			}
 
@@ -137,8 +146,9 @@ function onMIDIInit( midi ) {
 	if (midiDeviceType == "Launchpad") {  
 		midiOut.send( [0xB0,0x00,0x00] ); // Reset Launchpad
 		midiOut.send( [0xB0,0x00,0x01] ); // Select XY mode
-	}
-	if (midiDeviceType == "Launchpad Pro") {  
+	} else if (midiDeviceType == "Launchpad MK2") {  
+		midiOut.send( [0xF0, 0x00, 0x20, 0x29, 0x02, 0x18, 022, 0x00, 0xF7] ); // Session layout
+	} else if (midiDeviceType == "Launchpad Pro") {  
 		midiOut.send( [0xF0,0x00,0x20,0x29,0x02,0x10,0x0E,0x00,0xF7] ); // Set all LEDs to off
 		midiOut.send( [0xF0,0x00,0x20,0x29,0x02,0x10,0x20,0x03,0xF7] ); // Set Launchpad Pro into Programmer mode
 	}
@@ -153,6 +163,11 @@ function drawLaunchpadProPixel(x,y,live,mature) {
 function drawLaunchpadOriginalPixel(x,y,live,mature) {
 	var key = elem.row*16 + elem.col;
 	midiOut.send( [0x90, key, live ? (mature?0x13:0x30) : 0x00]);
+}
+
+function drawLaunchpadMKIIPixel(x,y,live,mature) {
+	var key = 11 + (7-x)*10 + y;
+	midiOut.send( [0x90, key, live ? (mature?0x09:0x10) : 0x00]);
 }
 
 function flipHandler(e) {
@@ -223,9 +238,15 @@ function drawFullBoardToQUNEO() {
 		return;
 	for (var i=0; i<numRows; i++) {
 		for (var j=0; j<numCols; j++) {
-			var key = i*32 + j*2;
-			if (midiOut)
-				midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x13:0x30) : 0x00]);
+			if (midiOut && launchpadFound) {
+				if (mkiiFound) {
+					var key = 11 + i*10 + j;
+					midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x09:0x10) : 0x00]);
+				} else {
+					var key = i*32 + j*2;
+					midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x13:0x30) : 0x00]);
+				}
+			}
 		}	
 	}
 
@@ -282,31 +303,27 @@ function tick() {
 	updateDottiFromLastFrame();
 }
 
-function midiProc(event) {
-  data = event.data;
-  var cmd = data[0] >> 4;
-  var channel = data[0] & 0xf;
-  var noteNumber = data[1];
-  var velocity = data[2];
+function LaunchpadMIDIProc(event) {
+	data = event.data;
+	var cmd = data[0] >> 4;
+	var channel = data[0] & 0xf;
+	var noteNumber = data[1];
+	var velocity = data[2];
 
-  if ( cmd==8 || ((cmd==9)&&(velocity==0)) ) { // with MIDI, note on with velocity zero is the same as note off
-    // note off
-    //noteOff(b);
-  } else if (cmd == 9) {  // Note on
-    if ((noteNumber&0x0f)==8)
-      tick();
-    else {
-      var x = noteNumber & 0x0f;
-      var y = (noteNumber & 0xf0) >> 4;
-      flipXY( x, y );
-    }
-  } else if (cmd == 11) { // Continuous Controller message
-    switch (noteNumber) {
-    }
-  }
+	if ( cmd==8 || ((cmd==9)&&(velocity==0)) ) { // with MIDI, note on with velocity zero is the same as note off
+		// note off
+	} else if (cmd == 9) {  // Note on
+		if ((noteNumber&0x0f)==8)
+			tick();
+		else {
+			var x = noteNumber & 0x0f;
+			var y = (noteNumber & 0xf0) >> 4;
+			flipXY( x, y );
+		}
+	}
 }
 
-function LaunchPadProMIDIProc(event) {
+function LaunchPadProAndMKIIMIDIProc(event) {
 	data = event.data;
 	var cmd = data[0] >> 4;
 //	var channel = data[0] & 0xf;
