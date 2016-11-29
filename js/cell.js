@@ -134,6 +134,7 @@ function onMIDIInit( midi ) {
 	selectMIDIOut.options.length = 0;
 	for (var output of midiAccess.outputs.values()) {
 		if (((output.name.toString() == "Launchpad")&&(midiDeviceType == "Launchpad"))
+			|| ((output.name.toString() == "Launchpad MK2")&&(midiDeviceType == "Launchpad MK2"))
 			|| ((output.name.toString() == "Launchpad Pro Standalone Port")&&(midiDeviceType == "Launchpad Pro"))
 			|| ((output.name.toString() == "QUNEO")&&(midiDeviceType == "QUNEO"))) {
 			selectMIDIOut.add(new Option(output.name,output.id,true,true));
