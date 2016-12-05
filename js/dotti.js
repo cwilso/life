@@ -9,7 +9,7 @@ window.addEventListener('load', function() {
           document.getElementById("dotti").style.visibility = "visible";
 } );
 
-let gattServer;
+let gattServer=null;
 let commandService;
 let writeCharacteristic;
 let busy = false;
@@ -216,6 +216,8 @@ function updateNextPixel() {
 
 
 function updateDottiFromLastFrame() {
+  if (!gattServer)
+    return;
 	currRow=0;
 	currCol=0;
 	updateNextPixel();

@@ -107,6 +107,14 @@ function onMIDIInit( midi ) {
 				midiDeviceType = "Launchpad";
 				input.onmidimessage = LaunchpadMIDIProc;
 				midiDrawRoutine = drawLaunchpadOriginalPixel;
+			} else if (input.name.toString() == "Launchpad Mini") {
+				midiDeviceType = "Launchpad Mini";
+				input.onmidimessage = LaunchpadMIDIProc;
+				midiDrawRoutine = drawLaunchpadOriginalPixel;
+			} else if (input.name.toString() == "Launchpad S") {
+				midiDeviceType = "Launchpad S";
+				input.onmidimessage = LaunchPadMIDIProc;
+				midiDrawRoutine = drawLaunchpadOriginalPixel;
 			} else if (input.name.toString() == "Launchpad MK2") {
 				midiDeviceType = "Launchpad MK2";
 				input.onmidimessage = LaunchPadProAndMKIIMIDIProc;
@@ -134,6 +142,7 @@ function onMIDIInit( midi ) {
 	selectMIDIOut.options.length = 0;
 	for (var output of midiAccess.outputs.values()) {
 		if (((output.name.toString() == "Launchpad")&&(midiDeviceType == "Launchpad"))
+			|| ((output.name.toString() == "Launchpad Mini")&&(midiDeviceType == "Launchpad Mini"))
 			|| ((output.name.toString() == "Launchpad Pro Standalone Port")&&(midiDeviceType == "Launchpad Pro"))
 			|| ((output.name.toString() == "QUNEO")&&(midiDeviceType == "QUNEO"))) {
 			selectMIDIOut.add(new Option(output.name,output.id,true,true));
@@ -143,7 +152,7 @@ function onMIDIInit( midi ) {
     }
 	selectMIDIOut.onchange = changeMIDIOut;
 
-	if (midiDeviceType == "Launchpad") {  
+	if ((midiDeviceType == "Launchpad")||(midiDeviceType == "Launchpad Mini")||(midiDeviceType == "Launchpad S")) {  
 		midiOut.send( [0xB0,0x00,0x00] ); // Reset Launchpad
 		midiOut.send( [0xB0,0x00,0x01] ); // Select XY mode
 	} else if (midiDeviceType == "Launchpad MK2") {  
@@ -162,7 +171,7 @@ function drawLaunchpadProPixel(x,y,live,mature) {
 }
 
 function drawLaunchpadOriginalPixel(x,y,live,mature) {
-	var key = elem.row*16 + elem.col;
+	var key = x*16 + y;
 	midiOut.send( [0x90, key, live ? (mature?0x13:0x30) : 0x00]);
 }
 
@@ -321,6 +330,9 @@ function LaunchpadMIDIProc(event) {
 			var y = (noteNumber & 0xf0) >> 4;
 			flipXY( x, y );
 		}
+	} else if (cmd == 11) {  // CC - top row of buttons
+		if (velocity) // if vel==0, it's a button-up
+			tick();
 	}
 }
 
