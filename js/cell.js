@@ -12,7 +12,8 @@ var selectMIDIOut = null;
 var midiAccess = null;
 var midiIn = null;
 var midiOut = null;
-var midiDeviceType = null;
+var midiDeviceType = null; // should be purely informational
+var midiDrawRoutine = null;
 
 window.addEventListener('keydown', function() { tick(); } );
 
@@ -89,64 +90,56 @@ function onMIDIFail( err ) {
 	alert("MIDI initialization failed.");
 }
 
+function selectIfLaunchpad( input ) {
+	var name = input.name.toString();
+	if (name == "Launchpad") {
+		midiDeviceType = "Launchpad";
+		input.onmidimessage = LaunchpadMIDIProc;
+		midiDrawRoutine = drawLaunchpadOriginalPixel;
+	} else if (name == "Launchpad Mini") {
+		midiDeviceType = "Launchpad Mini";
+		input.onmidimessage = LaunchpadMIDIProc;
+		midiDrawRoutine = drawLaunchpadOriginalPixel;
+	} else if (name == "Launchpad S") {
+		midiDeviceType = "Launchpad S";
+		input.onmidimessage = LaunchPadMIDIProc;
+		midiDrawRoutine = drawLaunchpadOriginalPixel;
+	} else if (name == "Launchpad MK2") {
+		midiDeviceType = "Launchpad MK2";
+		input.onmidimessage = LaunchPadProAndMKIIMIDIProc;
+		midiDrawRoutine = drawLaunchpadMKIIPixel;
+	} else if (name == "Launchpad Pro Standalone Port") {
+		midiDeviceType = "Launchpad Pro";
+		input.onmidimessage = LaunchPadProAndMKIIMIDIProc;
+		midiDrawRoutine = drawLaunchpadProPixel;
+	} else if (name == "QUNEO") {
+		midiDeviceType = "QUNEO";
+	}
+
+	if (midiDeviceType) {
+		if (midiIn) // if we already had a device selected, clear its handler.
+			midiIn.onmidimessage = null;
+		midiIn=input;
+		return midiIn;
+	}
+	return null;
+}
+
 function onMIDIInit( midi ) {
 	midiAccess = midi;
 	selectMIDIIn=document.getElementById("midiIn");
 	selectMIDIOut=document.getElementById("midiOut");
 
-	// clear the MIDI input select
-	selectMIDIIn.options.length = 0;
-	midiDeviceType = null;
-	midiIn = null;
-	midiOut = null;
-	midiDrawRoutine = null;
-
 	for (var input of midiAccess.inputs.values()) {
-		if (!midiIn) { // still looking for an input device
-			if (input.name.toString() == "Launchpad") {
-				midiDeviceType = "Launchpad";
-				input.onmidimessage = LaunchpadMIDIProc;
-				midiDrawRoutine = drawLaunchpadOriginalPixel;
-			} else if (input.name.toString() == "Launchpad Mini") {
-				midiDeviceType = "Launchpad Mini";
-				input.onmidimessage = LaunchpadMIDIProc;
-				midiDrawRoutine = drawLaunchpadOriginalPixel;
-			} else if (input.name.toString() == "Launchpad S") {
-				midiDeviceType = "Launchpad S";
-				input.onmidimessage = LaunchPadMIDIProc;
-				midiDrawRoutine = drawLaunchpadOriginalPixel;
-			} else if (input.name.toString() == "Launchpad MK2") {
-				midiDeviceType = "Launchpad MK2";
-				input.onmidimessage = LaunchPadProAndMKIIMIDIProc;
-				midiDrawRoutine = drawLaunchpadMKIIPixel;
-			} else if (input.name.toString() == "Launchpad Pro Standalone Port") {
-				midiDeviceType = "Launchpad Pro";
-				input.onmidimessage = LaunchPadProAndMKIIMIDIProc;
-				midiDrawRoutine = drawLaunchpadProPixel;
-			} else if (input.name.toString() == "QUNEO") {
-				midiDeviceType = "QUNEO";
-			}
-
-			if (midiDeviceType) {
-				midiIn=input;
-			}
-		}
-		if (midiIn==input)
-			selectMIDIIn.add(new Option(input.name,input.id,true,true));
-		else
-			selectMIDIIn.add(new Option(input.name,input.id,false,false));
+		if (!midiIn)
+			midiIn = selectIfLaunchpad(input);
+		selectMIDIIn.add(new Option(input.name,input.id,(midiIn==input),(midiIn==input)));
 	}
 	selectMIDIIn.onchange = changeMIDIIn;
 
-	// clear the MIDI output select
-	selectMIDIOut.options.length = 0;
+	var inputName = midiIn ? midiIn.name.toString() : null;
 	for (var output of midiAccess.outputs.values()) {
-		if (((output.name.toString() == "Launchpad")&&(midiDeviceType == "Launchpad"))
-			|| ((output.name.toString() == "Launchpad Mini")&&(midiDeviceType == "Launchpad Mini"))
-			|| ((output.name.toString() == "Launchpad S")&&(midiDeviceType == "Launchpad S"))
-			|| ((output.name.toString() == "Launchpad MK2")&&(midiDeviceType == "Launchpad MK2"))
-			|| ((output.name.toString() == "Launchpad Pro Standalone Port")&&(midiDeviceType == "Launchpad Pro"))
-			|| ((output.name.toString() == "QUNEO")&&(midiDeviceType == "QUNEO"))) {
+		if (output.name.toString() == inputName) {
 			selectMIDIOut.add(new Option(output.name,output.id,true,true));
 			midiOut=output;
 		} else
@@ -154,17 +147,24 @@ function onMIDIInit( midi ) {
     }
 	selectMIDIOut.onchange = changeMIDIOut;
 
-	if ((midiDeviceType == "Launchpad")||(midiDeviceType == "Launchpad Mini")||(midiDeviceType == "Launchpad S")) {  
+	if (midiOut)
+		resetLaunchpad(midiOut);
+	drawFullBoardToMIDI();
+}
+
+function resetLaunchpad( midiDeviceName ) {
+	if ((midiDeviceName == "Launchpad")||(midiDeviceName == "Launchpad Mini")||(midiDeviceName == "Launchpad S")) {  
 		midiOut.send( [0xB0,0x00,0x00] ); // Reset Launchpad
 		midiOut.send( [0xB0,0x00,0x01] ); // Select XY mode
-	} else if (midiDeviceType == "Launchpad MK2") {  
+	} else if (midiDeviceName == "Launchpad MK2") {  
 		midiOut.send( [0xF0,0x00,0x20,0x29,0x02,0x18,0x22,0x00,0xF7] ); // Session layout
 		midiOut.send( [0xF0,0x00,0x20,0x29,0x02,0x10,0x0E,0x00,0xF7] ); // Set all LEDs to off
-	} else if (midiDeviceType == "Launchpad Pro") {  
+	} else if (midiDeviceName == "Launchpad Pro Standalone Port") {  
 		midiOut.send( [0xF0,0x00,0x20,0x29,0x02,0x10,0x20,0x03,0xF7] ); // Set Launchpad Pro into Programmer mode
 		midiOut.send( [0xF0,0x00,0x20,0x29,0x02,0x10,0x0E,0x00,0xF7] ); // Set all LEDs to off
+	} else if (midiDeviceName == "QUNEO") {
+		// ? TODO
 	}
-	drawFullBoardToMIDI();
 }
 
 function drawLaunchpadProPixel(x,y,live,mature) {
