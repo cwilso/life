@@ -114,6 +114,8 @@ function selectIfLaunchpad( input ) {
 		midiDrawRoutine = drawLaunchpadProPixel;
 	} else if (name == "QUNEO") {
 		midiDeviceType = "QUNEO";
+		input.onmidimessage = QuneoMIDIProc;
+		midiDrawRoutine = drawQuneoPixel;
 	}
 
 	if (midiDeviceType) {
@@ -182,6 +184,12 @@ function drawLaunchpadMKIIPixel(x,y,live,mature) {
 	midiOut.send( [0x90, key, live ? (mature?0x09:0x10) : 0x00]);
 }
 
+function drawQuneoPixel(x,y,live,mature) {
+	var key = 0 + (7-x)*16 + (y*2);
+	midiOut.send( [0x91, key, live ? 0x7f : 0x00]);
+	midiOut.send( [0x91, key+1, live ? (mature?0x7f:00) : 0x00]);
+}
+
 function flipHandler(e) {
 	flip( e.target );
 }
@@ -239,26 +247,6 @@ function drawFullBoardToMIDI() {
 			var elem = findElemByXY(j,i);
 			if (midiDrawRoutine)
 				midiDrawRoutine(i,j,currentFrame[i][j],elem.classList.contains("mature"));
-		}	
-	}
-
-//	console.log( "draw took " + (window.performance.webkitNow() - t) + " ms.");
-}
-
-function drawFullBoardToQUNEO() {
-	if (!quneoFound)
-		return;
-	for (var i=0; i<numRows; i++) {
-		for (var j=0; j<numCols; j++) {
-			if (midiOut && launchpadFound) {
-				if (mkiiFound) {
-					var key = 11 + i*10 + j;
-					midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x09:0x10) : 0x00]);
-				} else {
-					var key = i*32 + j*2;
-					midiOut.send( [0x90, key, currentFrame[i][j] ? (findElemByXY(j,i).classList.contains("mature")?0x13:0x30) : 0x00]);
-				}
-			}
 		}	
 	}
 
@@ -365,3 +353,28 @@ function LaunchPadProAndMKIIMIDIProc(event) {
 			tick();
 	}
 }
+
+function QuneoMIDIProc(event) {
+	data = event.data;
+	var cmd = data[0] >> 4;
+	var channel = data[0] & 0xf;
+	var noteNumber = data[1];
+	var velocity = data[2];
+
+	if ( cmd==8 || ((cmd==9)&&(velocity==0)) ) { // with MIDI, note on with velocity zero is the same as note off
+		// note off
+	} else if (cmd == 9) {  // Note on
+		if ((channel==2)&&(noteNumber<127)) {
+			var x = Math.floor(noteNumber/16);
+			var y = (noteNumber % 16)/2;
+//	var key = 0 + (7-x)*16 + (y*2);
+			flipXY( x, y );
+		} else
+			tick();
+	} else if (cmd == 11) {  // CC - top row of buttons
+		if (velocity) // if vel==0, it's a button-up
+			tick();
+	}
+}
+
+
